@@ -1,5 +1,5 @@
 <!-- TOC -->
-* [X39.SourceGenerators.Property](#x39sourcegeneratorsproperty)
+* [X39.Roslyn.Property](#x39sourcegeneratorsproperty)
 * [Quick Start](#quick-start)
 * [Common fixes with source generators](#common-fixes-with-source-generators)
   * [The Source-Generator is not working (After installing the package; After Building)](#the-source-generator-is-not-working-after-installing-the-package-after-building)
@@ -59,7 +59,7 @@
   * [License](#license)
 <!-- TOC -->
 
-# X39.SourceGenerators.Property
+# X39.Roslyn.Property
 
 This library adds a source generator that generates properties for a given class.
 
@@ -77,7 +77,7 @@ After that, make the classes you want to generate properties for partial and add
 eg.:
 
 ```csharp
-using X39.SourceGenerators.Property;
+using X39.Roslyn.Property;
 
 [NotifyPropertyChanged]
 public partial class MyClass

@@ -27,4 +27,4 @@ jobs:
       # Change the /p:VERSION=X.X.X part to change the actual package version.
       run: dotnet pack --configuration Release /p:VERSION=4.0.0.${{ github.run_number }} --version-suffix ${{ github.sha }}
     - name: Upload to NuGet
-      run: dotnet nuget push /home/runner/work/X39.SourceGenerators.Property/X39.SourceGenerators.Property/sources/X39.SourceGenerators.Property/bin/Release/X39.SourceGenerators.Property.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} --no-symbols
+      run: dotnet nuget push /home/runner/work/X39.Roslyn.Property/X39.Roslyn.Property/sources/X39.Roslyn.Property/bin/Release/X39.Roslyn.Property.*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} --no-symbols

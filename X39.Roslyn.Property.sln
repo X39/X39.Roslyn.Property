@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "files", "files", "{FDD6CDC4-C0BF-41CE-9F1F-DA0CAB3C5A6A}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		LICENSE = LICENSE
+		README.md = README.md
+		CONTRIBUTORS.md = CONTRIBUTORS.md
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sources", "sources", "{7DEFEC2F-D804-42B4-BF0E-FF9832521DE9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3DD74EAC-9828-45D6-A74F-FEF0DB230283}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "X39.Roslyn.Property.Generator", "sources\X39.Roslyn.Property.Generator\X39.Roslyn.Property.Generator.csproj", "{68C2A06A-5BFF-4B22-8D54-04C83F3E4291}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "X39.Roslyn.Property.Tests", "tests\X39.Roslyn.Property.Tests\X39.Roslyn.Property.Tests.csproj", "{5DB16EAA-E729-411C-B63E-5CCC17C2147E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{79BE0890-B051-4D42-87FF-42EE183F9948}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{3A22EB1A-AEBB-4655-990C-2D14BBC38296}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\main.yml = .github\workflows\main.yml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "X39.Roslyn.Property.Integration", "tests\X39.Roslyn.Property.Integration\X39.Roslyn.Property.Integration.csproj", "{F7560114-07A6-4544-9599-CB43DBA65E10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "X39.Roslyn.Property", "sources\X39.Roslyn.Property\X39.Roslyn.Property.csproj", "{7B60CE87-7713-4D22-AE2E-EDC1EEE82A76}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{68C2A06A-5BFF-4B22-8D54-04C83F3E4291} = {7DEFEC2F-D804-42B4-BF0E-FF9832521DE9}
+		{5DB16EAA-E729-411C-B63E-5CCC17C2147E} = {3DD74EAC-9828-45D6-A74F-FEF0DB230283}
+		{3A22EB1A-AEBB-4655-990C-2D14BBC38296} = {79BE0890-B051-4D42-87FF-42EE183F9948}
+		{F7560114-07A6-4544-9599-CB43DBA65E10} = {3DD74EAC-9828-45D6-A74F-FEF0DB230283}
+		{7B60CE87-7713-4D22-AE2E-EDC1EEE82A76} = {7DEFEC2F-D804-42B4-BF0E-FF9832521DE9}
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{68C2A06A-5BFF-4B22-8D54-04C83F3E4291}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68C2A06A-5BFF-4B22-8D54-04C83F3E4291}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68C2A06A-5BFF-4B22-8D54-04C83F3E4291}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68C2A06A-5BFF-4B22-8D54-04C83F3E4291}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DB16EAA-E729-411C-B63E-5CCC17C2147E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DB16EAA-E729-411C-B63E-5CCC17C2147E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DB16EAA-E729-411C-B63E-5CCC17C2147E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DB16EAA-E729-411C-B63E-5CCC17C2147E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7560114-07A6-4544-9599-CB43DBA65E10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7560114-07A6-4544-9599-CB43DBA65E10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7560114-07A6-4544-9599-CB43DBA65E10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7560114-07A6-4544-9599-CB43DBA65E10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B60CE87-7713-4D22-AE2E-EDC1EEE82A76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B60CE87-7713-4D22-AE2E-EDC1EEE82A76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B60CE87-7713-4D22-AE2E-EDC1EEE82A76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B60CE87-7713-4D22-AE2E-EDC1EEE82A76}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
