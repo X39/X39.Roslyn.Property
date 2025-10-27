@@ -18,8 +18,8 @@ namespace X39.SourceGenerators.Property.Generator;
 [Generator]
 public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
 {
-    private const string RangeAttribute     = "System.ComponentModel.DataAnnotations.RangeAttribute";
-    private const string MaxLengthAttribute = "System.ComponentModel.DataAnnotations.MaxLengthAttribute";
+    private const string RangeAttribute              = "System.ComponentModel.DataAnnotations.RangeAttribute";
+    private const string MaxLengthAttribute          = "System.ComponentModel.DataAnnotations.MaxLengthAttribute";
     private const string GeneratePropertiesAttribute = "X39.SourceGenerators.Property.GeneratePropertiesAttribute";
 
     private const string NotifyOnAttribute = "X39.SourceGenerators.Property.NotifyOnAttribute";
@@ -120,7 +120,10 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
         }
 
         // Go through all fields of the class.
-        foreach (var field in classDeclarationSyntax.Members.OfType<FieldDeclarationSyntax>())
+        foreach (var field in Enumerable
+                     .Empty<MemberDeclarationSyntax>()
+                     .Concat(classDeclarationSyntax.Members.OfType<FieldDeclarationSyntax>())
+                     .Concat(classDeclarationSyntax.Members.OfType<PropertyDeclarationSyntax>().Where(e => e.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))))
         foreach (AttributeListSyntax attributeListSyntax in field.AttributeLists)
         foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
         {
@@ -180,7 +183,9 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
         {
             bool? generateProperty = null;
             bool? notifyPropertyChanged = null;
+            string? notifyPropertyChangedMethod = null;
             bool? notifyPropertyChanging = null;
+            string? notifyPropertyChangingMethod = null;
             string? validationStrategy = null;
             string? propertyName = null;
             string? propertyEncapsulation = null;
@@ -249,28 +254,36 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                         goto default;
                     default:
                     {
-                        var builder = new StringBuilder();
-                        builder.Append('[');
-                        builder.Append(attributeName);
-                        if (attribute.ConstructorArguments.Length > 0)
+                        try
                         {
-                            builder.Append('(');
-                            for (var i = 0; i < attribute.ConstructorArguments.Length; i++)
+                            var builder = new StringBuilder();
+                            builder.Append('[');
+                            builder.Append(attributeName);
+                            if (attribute.ConstructorArguments.Length > 0)
                             {
-                                if (i > 0)
-                                    builder.Append(", ");
-                                var csharp = attribute.ConstructorArguments[i].ToCSharp();
-                                builder.Append(csharp);
+                                builder.Append('(');
+                                for (var i = 0; i < attribute.ConstructorArguments.Length; i++)
+                                {
+                                    if (i > 0)
+                                        builder.Append(", ");
+                                    var csharp = attribute.ConstructorArguments[i].ToCSharp();
+                                    builder.Append(csharp);
+                                }
+
+                                builder.Append(')');
                             }
 
-                            builder.Append(')');
+                            builder.Append(']');
+                            disableAttributeTakeover = disableAttributeTakeover is null
+                                ? (new List<string> { builder.ToString() }, false)
+                                : (disableAttributeTakeover.Value.attributes.Append(builder.ToString()).ToList(),
+                                    disableAttributeTakeover.Value.inherit);
+                        }
+                        catch
+                        {
+                            // ignore
                         }
 
-                        builder.Append(']');
-                        disableAttributeTakeover = disableAttributeTakeover is null
-                            ? (new List<string> { builder.ToString() }, false)
-                            : (disableAttributeTakeover.Value.attributes.Append(builder.ToString()).ToList(),
-                                disableAttributeTakeover.Value.inherit);
                         break;
                     }
                     case GetterAttribute:
@@ -319,10 +332,12 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                         generateProperty = false;
                         break;
                     case NotifyPropertyChangedAttribute:
-                        notifyPropertyChanged = (bool?) attribute.ConstructorArguments[0].Value ?? true;
+                        notifyPropertyChanged       = (bool?) attribute.ConstructorArguments[0].Value ?? true;
+                        notifyPropertyChangedMethod = (string?) attribute.ConstructorArguments[1].Value ?? null;
                         break;
                     case NotifyPropertyChangingAttribute:
-                        notifyPropertyChanging = (bool?) attribute.ConstructorArguments[0].Value ?? true;
+                        notifyPropertyChanging       = (bool?) attribute.ConstructorArguments[0].Value ?? true;
+                        notifyPropertyChangingMethod = (string?) attribute.ConstructorArguments[1].Value ?? null;
                         break;
                     case ValidationStrategyAttribute:
                         validationStrategy = attribute.ConstructorArguments[0].Value?.ToString() ?? "Exception";
@@ -380,21 +395,23 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
 
             return new GenInfo
             {
-                Generate                 = generateProperty,
-                NotifyPropertyChanged    = notifyPropertyChanged,
-                NotifyPropertyChanging   = notifyPropertyChanging,
-                ValidationStrategy       = validationStrategy,
-                PropertyName             = propertyName,
-                PropertyEncapsulation    = propertyEncapsulation,
-                VirtualProperty          = virtualProperty,
-                Range                    = range,
-                MaxLength                = maxLength,
-                EqualityCheck            = equalityCheck,
-                GuardMethods             = guardMethods,
-                PropertyAttributes       = propertyAttributes,
-                DisableAttributeTakeover = disableAttributeTakeover,
-                GetterMode               = getterMode,
-                SetterMode               = setterMode,
+                Generate                     = generateProperty,
+                NotifyPropertyChanged        = notifyPropertyChanged,
+                NotifyPropertyChangedMethod  = notifyPropertyChangedMethod,
+                NotifyPropertyChanging       = notifyPropertyChanging,
+                NotifyPropertyChangingMethod = notifyPropertyChangingMethod,
+                ValidationStrategy           = validationStrategy,
+                PropertyName                 = propertyName,
+                PropertyEncapsulation        = propertyEncapsulation,
+                VirtualProperty              = virtualProperty,
+                Range                        = range,
+                MaxLength                    = maxLength,
+                EqualityCheck                = equalityCheck,
+                GuardMethods                 = guardMethods,
+                PropertyAttributes           = propertyAttributes,
+                DisableAttributeTakeover     = disableAttributeTakeover,
+                GetterMode                   = getterMode,
+                SetterMode                   = setterMode,
             };
         }
 
@@ -475,23 +492,44 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                 );
 
             var notifyOnDictionary = CreateNotifyOnDictionary(classSymbol);
-            var fieldSymbols = classSymbol.GetMembers().OfType<IFieldSymbol>();
-            foreach (var fieldSymbol in fieldSymbols)
+            foreach (var memberSymbol in Enumerable
+                         .Empty<ISymbol>()
+                         .Concat(classSymbol.GetMembers().OfType<IFieldSymbol>())
+                         .Concat(classSymbol.GetMembers().OfType<IPropertySymbol>().Where(e => e.IsPartialDefinition)))
             {
-                if (fieldSymbol.Name.Length > 0 && fieldSymbol.Name[0] == '<')
+                if (memberSymbol.Name.Length > 0 && memberSymbol.Name[0] == '<')
                     continue;
-                var fieldGenInfo = GetGenerationInfo(fieldSymbol.GetAttributes());
+                var fieldGenInfo = GetGenerationInfo(memberSymbol.GetAttributes());
                 var currentGenInfo = fieldGenInfo.WithDefaults(defaultGenInfo);
                 if (!currentGenInfo.GenerateProperty())
                     continue;
-                var propertyName = currentGenInfo.PropertyName ?? NormalizeFieldName(fieldSymbol.Name);
-                var propertyType = fieldSymbol.Type.ToDisplayString();
-                if (IsNullableFieldSymbol(fieldSymbol)
+                var propertyName = memberSymbol is IPropertySymbol
+                    ? memberSymbol.Name
+                    : currentGenInfo.PropertyName ?? NormalizeFieldName(memberSymbol.Name);
+                var propertyType = memberSymbol.GetSymbolType().ToDisplayString();
+                if (memberSymbol.IsNullableFieldSymbol()
                     && !propertyType.EndsWith("?", StringComparison.InvariantCulture))
                     propertyType = string.Concat(propertyType, '?');
-                WriteOutInheritedAttributes(currentGenInfo, builder);
-                WriteOutAttributes(currentGenInfo, builder);
-                WriteOutDocumentationTrivia(fieldSymbol, builder);
+                if (memberSymbol is IFieldSymbol)
+                {
+                    WriteOutInheritedAttributes(currentGenInfo, builder);
+                    WriteOutAttributes(currentGenInfo, builder);
+                    WriteOutDocumentationTrivia(memberSymbol, builder);
+                }
+
+                if (memberSymbol is IPropertySymbol propertySymbol)
+                {
+                    builder.Append("    "); // Indentation.
+                    builder.Append("private ");
+                    if (propertySymbol.IsStatic)
+                        builder.Append("static ");
+                    if (propertySymbol.SetMethod?.IsInitOnly ?? false)
+                        builder.Append("readonly ");
+                    builder.Append(propertyType);
+                    builder.Append(" ");
+                    builder.Append(propertySymbol.GetFieldName());
+                    builder.AppendLine(";");
+                }
                 builder.Append("    "); // Indentation.
                 builder.Append(
                     currentGenInfo.PropertyEncapsulation switch
@@ -507,6 +545,8 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                 builder.Append(' ');
                 if (currentGenInfo.VirtualProperty is true)
                     builder.Append("virtual ");
+                if (memberSymbol is IPropertySymbol)
+                    builder.Append("partial ");
                 builder.Append(propertyType);
                 builder.Append(' ');
                 builder.Append(propertyName);
@@ -514,7 +554,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                 builder.AppendLine("    {");
                 if (currentGenInfo.GetterMode is EGetterMode.Default)
                 {
-                    builder.AppendLine($"        get => {fieldSymbol.Name};");
+                    builder.AppendLine($"        get => {memberSymbol.GetFieldName()};");
                 }
 
                 if (currentGenInfo.SetterMode is not ESetterMode.None)
@@ -529,7 +569,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                     }
                     else
                     {
-                        if (fieldSymbol.IsReadOnly)
+                        if (memberSymbol.IsReadOnly())
                         {
                             builder.AppendLine("        init");
                             isInit = true;
@@ -544,7 +584,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
 
                     if (!isInit)
                     {
-                        WriteOutEqualityCheck(currentGenInfo, propertyType, builder, fieldSymbol);
+                        WriteOutEqualityCheck(currentGenInfo, propertyType, builder, memberSymbol);
                         WriteOutNotifyPropertyChanging(currentGenInfo, builder, propertyName);
                         foreach (var notifyProperty in notifyOnDictionary.TryGetValue(
                                      propertyName,
@@ -559,8 +599,8 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
 
                     WriteOutRangeValidation(currentGenInfo, builder, propertyName);
                     WriteOutMaxLengthValidation(currentGenInfo, builder, propertyName);
-                    WriteOutGuards(currentGenInfo, builder, fieldSymbol, propertyName);
-                    builder.AppendLine($"            {fieldSymbol.Name} = value;");
+                    WriteOutGuards(currentGenInfo, builder, memberSymbol, propertyName);
+                    builder.AppendLine($"            {memberSymbol.GetFieldName()} = value;");
                     if (!isInit)
                     {
                         WriteOutPropertyChanged(currentGenInfo, builder, propertyName);
@@ -584,7 +624,10 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             builder.AppendLine("}");
 
             // Add the source code to the compilation.
-            context.AddSource($"{namespaceName}.{fileClassName}.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
+            context.AddSource(
+                $"{namespaceName}.{fileClassName}.g.cs",
+                SourceText.From(builder.ToString(), Encoding.UTF8)
+            );
         }
     }
 
@@ -626,9 +669,9 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
         }
     }
 
-    private static void WriteOutDocumentationTrivia(IFieldSymbol fieldSymbol, StringBuilder builder)
+    private static void WriteOutDocumentationTrivia(ISymbol symbol, StringBuilder builder)
     {
-        var declaringSyntax = fieldSymbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax();
+        var declaringSyntax = symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax();
         if (declaringSyntax is null)
             return;
         if (declaringSyntax.Parent?.Parent is not FieldDeclarationSyntax fieldDeclarationSyntax)
@@ -638,8 +681,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             .Concat(fieldDeclarationSyntax.AttributeLists.SelectMany((q) => q.DescendantTrivia()))
             .Concat(fieldDeclarationSyntax.Modifiers.SelectMany((q) => q.GetAllTrivia()));
         var doc = trivia
-            .Where(
-                (q) =>
+            .Where((q) =>
                 {
                     if (q.IsKind(SyntaxKind.DocumentationCommentExteriorTrivia))
                         return true;
@@ -682,7 +724,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
     private static void WriteOutGuards(
         GenInfo currentGenInfo,
         StringBuilder builder,
-        IFieldSymbol fieldSymbol,
+        ISymbol symbol,
         string propertyName
     )
     {
@@ -691,7 +733,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             var method = guardMethod.className is null
                 ? guardMethod.methodName
                 : string.Concat(guardMethod.className, ".", guardMethod.methodName);
-            builder.AppendLine($"            if (!{method}({fieldSymbol.Name}, value))");
+            builder.AppendLine($"            if (!{method}({symbol.GetFieldName()}, value))");
             WriteOutValidationStrategyOutcome(currentGenInfo, builder, propertyName, $"Guard method {method} failed");
         }
     }
@@ -810,12 +852,13 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
 
     private static void WriteOutPropertyChanged(GenInfo currentGenInfo, StringBuilder builder, string propertyName)
     {
-        if (currentGenInfo.NotifyPropertyChanged is not null)
-        {
-            builder.AppendLine(
-                $"            this.PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(\"{propertyName}\"));"
-            );
-        }
+        if (currentGenInfo.NotifyPropertyChanged is null)
+            return;
+        builder.AppendLine(
+            currentGenInfo.NotifyPropertyChangedMethod is not null
+                ? $"            this.{currentGenInfo.NotifyPropertyChangedMethod}(this, \"{propertyName}\");"
+                : $"            this.PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(\"{propertyName}\"));"
+        );
     }
 
     private static void WriteOutNotifyPropertyChanging(
@@ -824,19 +867,20 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
         string propertyName
     )
     {
-        if (currentGenInfo.NotifyPropertyChanging is not null)
-        {
-            builder.AppendLine(
-                $"            this.PropertyChanging?.Invoke(this, new System.ComponentModel.PropertyChangingEventArgs(\"{propertyName}\"));"
-            );
-        }
+        if (currentGenInfo.NotifyPropertyChanging is null)
+            return;
+        builder.AppendLine(
+            currentGenInfo.NotifyPropertyChangingMethod is not null
+                ? $"            this.{currentGenInfo.NotifyPropertyChangingMethod}(this, \"{propertyName}\");"
+                : $"            this.PropertyChanging?.Invoke(this, new System.ComponentModel.PropertyChangingEventArgs(\"{propertyName}\"));"
+        );
     }
 
     private static void WriteOutEqualityCheck(
         GenInfo currentGenInfo,
         string propertyType,
         StringBuilder builder,
-        IFieldSymbol fieldSymbol
+        ISymbol symbol
     )
     {
         switch (currentGenInfo.EqualityCheck)
@@ -850,83 +894,68 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                 {
                     case "System.Single":
                         builder.AppendLine(
-                            $"            if (Math.Abs(value - {fieldSymbol.Name}) < {currentGenInfo.EqualityCheck?.epsilonF ?? "Single.Epsilon"}) return;"
+                            $"            if (Math.Abs(value - {symbol.GetFieldName()}) < {currentGenInfo.EqualityCheck?.epsilonF ?? "Single.Epsilon"}) return;"
                         );
                         break;
                     case "System.Double":
                         builder.AppendLine(
-                            $"            if (Math.Abs(value - {fieldSymbol.Name}) < {currentGenInfo.EqualityCheck?.epsilonF ?? "Double.Epsilon"}) return;"
+                            $"            if (Math.Abs(value - {symbol.GetFieldName()}) < {currentGenInfo.EqualityCheck?.epsilonF ?? "Double.Epsilon"}) return;"
                         );
                         break;
                     case "System.SByte":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.Byte":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.Int16":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.UInt16":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.Int32":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.UInt32":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.Int64":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.UInt64":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.Decimal":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.Boolean":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.IntPtr":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.UIntPtr":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     case "System.Char":
-                        builder.AppendLine($"            if (value == {fieldSymbol.Name}) return;");
+                        builder.AppendLine($"            if (value == {symbol.GetFieldName()}) return;");
                         break;
                     default:
                         builder.AppendLine(
-                            IsNullableFieldSymbol(fieldSymbol)
-                                ? $"            if (value is null && {fieldSymbol.Name} is null || (value?.Equals({fieldSymbol.Name}) ?? false)) return;"
-                                : $"            if (value.Equals({fieldSymbol.Name})) return;"
+                            symbol.IsNullableFieldSymbol()
+                                ? $"            if (value is null && {symbol.GetFieldName()} is null || (value?.Equals({symbol.GetFieldName()}) ?? false)) return;"
+                                : $"            if (value.Equals({symbol.GetFieldName()})) return;"
                         );
                         break;
                 }
 
                 break;
             case ("1", _, _, { } customMethod):
-                builder.AppendLine($"            if ({customMethod}({fieldSymbol.Name}, value)) return;");
+                builder.AppendLine($"            if ({customMethod}({symbol.GetFieldName()}, value)) return;");
                 break;
             case ("2", _, _, _):
                 break;
-        }
-    }
-
-    private static bool IsNullableFieldSymbol(IFieldSymbol fieldSymbol)
-    {
-        if (fieldSymbol.NullableAnnotation is NullableAnnotation.Annotated)
-            return true;
-
-        if (fieldSymbol.Type.TypeKind != TypeKind.TypeParameter)
-        {
-            return fieldSymbol.NullableAnnotation is NullableAnnotation.None && !fieldSymbol.Type.IsValueType;
-        }
-        else
-        {
-            return fieldSymbol.NullableAnnotation is NullableAnnotation.None && !fieldSymbol.Type.IsValueType;
         }
     }
 }

@@ -11,7 +11,7 @@ namespace X39.SourceGenerators.Property;
 /// The default inheritance behavior cannot be changed when used on a class,
 /// but only one field has to change the inheritance behavior to inherit.
 /// </remarks>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
 public class PropertyAttributeAttribute : Attribute
 {
     /// <summary>

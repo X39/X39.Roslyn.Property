@@ -6,40 +6,40 @@ namespace X39.SourceGenerators.Property.Generator;
 internal sealed class GenInfo
 {
     public bool? Generate { get; set; }
-
-    // ReSharper disable once InconsistentNaming
     public bool? NotifyPropertyChanged { get; set; }
-
-    // ReSharper disable once InconsistentNaming
-    public bool?                                                            NotifyPropertyChanging { get; set; }
-    public string?                                                          ValidationStrategy { get; set; }
-    public string?                                                          PropertyName { get; set; }
-    public string?                                                          PropertyEncapsulation { get; set; }
-    public bool?                                                            VirtualProperty { get; set; }
-    public (string type, string from, string to)?                           Range { get; set; }
-    public int?                                                             MaxLength { get; set; }
+    public string? NotifyPropertyChangedMethod { get; set; }
+    public bool? NotifyPropertyChanging { get; set; }
+    public string? NotifyPropertyChangingMethod { get; set; }
+    public string? ValidationStrategy { get; set; }
+    public string? PropertyName { get; set; }
+    public string? PropertyEncapsulation { get; set; }
+    public bool? VirtualProperty { get; set; }
+    public (string type, string from, string to)? Range { get; set; }
+    public int? MaxLength { get; set; }
     public (string mode, string epsilonF, string epsilonD, string? custom)? EqualityCheck { get; set; }
-    public List<(string methodName, string? className)>                     GuardMethods { get; set; } = new();
-    public (List<string> attributes, bool inherit)?                         PropertyAttributes { get; set; }
-    public (List<string> attributes, bool inherit)?                         DisableAttributeTakeover { get; set; }
-    public ESetterMode                                                      SetterMode { get; set; }
-    public EGetterMode                                                      GetterMode { get; set; }
+    public List<(string methodName, string? className)> GuardMethods { get; set; } = new();
+    public (List<string> attributes, bool inherit)? PropertyAttributes { get; set; }
+    public (List<string> attributes, bool inherit)? DisableAttributeTakeover { get; set; }
+    public ESetterMode SetterMode { get; set; }
+    public EGetterMode GetterMode { get; set; }
 
     public GenInfo WithDefaults(GenInfo defaultGenInfo)
     {
         return new GenInfo
         {
-            Generate               = Generate ?? defaultGenInfo.Generate,
-            NotifyPropertyChanged  = NotifyPropertyChanged ?? defaultGenInfo.NotifyPropertyChanged,
-            NotifyPropertyChanging = NotifyPropertyChanging ?? defaultGenInfo.NotifyPropertyChanging,
-            ValidationStrategy     = ValidationStrategy ?? defaultGenInfo.ValidationStrategy,
-            PropertyName           = PropertyName ?? defaultGenInfo.PropertyName,
-            PropertyEncapsulation  = PropertyEncapsulation ?? defaultGenInfo.PropertyEncapsulation,
-            VirtualProperty        = VirtualProperty ?? defaultGenInfo.VirtualProperty,
-            Range                  = Range ?? defaultGenInfo.Range,
-            MaxLength              = MaxLength ?? defaultGenInfo.MaxLength,
-            EqualityCheck          = EqualityCheck ?? defaultGenInfo.EqualityCheck,
-            GuardMethods           = GuardMethods.Count > 0 ? GuardMethods : defaultGenInfo.GuardMethods,
+            Generate                     = Generate ?? defaultGenInfo.Generate,
+            NotifyPropertyChanged        = NotifyPropertyChanged ?? defaultGenInfo.NotifyPropertyChanged,
+            NotifyPropertyChangedMethod  = NotifyPropertyChangedMethod ?? defaultGenInfo.NotifyPropertyChangedMethod,
+            NotifyPropertyChanging       = NotifyPropertyChanging ?? defaultGenInfo.NotifyPropertyChanging,
+            NotifyPropertyChangingMethod = NotifyPropertyChangingMethod ?? defaultGenInfo.NotifyPropertyChangingMethod,
+            ValidationStrategy           = ValidationStrategy ?? defaultGenInfo.ValidationStrategy,
+            PropertyName                 = PropertyName ?? defaultGenInfo.PropertyName,
+            PropertyEncapsulation        = PropertyEncapsulation ?? defaultGenInfo.PropertyEncapsulation,
+            VirtualProperty              = VirtualProperty ?? defaultGenInfo.VirtualProperty,
+            Range                        = Range ?? defaultGenInfo.Range,
+            MaxLength                    = MaxLength ?? defaultGenInfo.MaxLength,
+            EqualityCheck                = EqualityCheck ?? defaultGenInfo.EqualityCheck,
+            GuardMethods                 = GuardMethods.Count > 0 ? GuardMethods : defaultGenInfo.GuardMethods,
             DisableAttributeTakeover = (DisableAttributeTakeover?.inherit ?? false)
                 ? (new List<string>(), true)
                 : (defaultGenInfo.DisableAttributeTakeover?.inherit ?? false)
@@ -49,9 +49,8 @@ internal sealed class GenInfo
                         : DisableAttributeTakeover,
             PropertyAttributes = (PropertyAttributes?.inherit ?? true)
                 ? (
-                    (PropertyAttributes?.attributes ?? Enumerable.Empty<string>()).Concat(
-                        defaultGenInfo.PropertyAttributes?.attributes ?? Enumerable.Empty<string>()
-                    )
+                    (PropertyAttributes?.attributes ?? Enumerable.Empty<string>())
+                    .Concat(defaultGenInfo.PropertyAttributes?.attributes ?? Enumerable.Empty<string>())
                     .ToList(), true)
                 : PropertyAttributes is null && defaultGenInfo.PropertyAttributes is not null
                     ? (new List<string>(), false)

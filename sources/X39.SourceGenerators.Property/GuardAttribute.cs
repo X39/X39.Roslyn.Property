@@ -12,7 +12,7 @@ namespace X39.SourceGenerators.Property;
 /// and must accept two parameters.
 /// Sample method signature: `bool GuardMethodName(T oldValue, T newValue)`.
 /// </remarks>
-[AttributeUsage(AttributeTargets.Field, AllowMultiple = true, Inherited = false)]
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true, Inherited = false)]
 public class GuardAttribute : Attribute
 {
     /// <summary>

@@ -9,7 +9,7 @@ namespace X39.SourceGenerators.Property;
 /// </summary>
 /// <seealso cref="System.ComponentModel.DataAnnotations.MaxLengthAttribute"/>
 /// <seealso cref="System.ComponentModel.DataAnnotations.RangeAttribute"/>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
 public class ValidationStrategyAttribute : Attribute
 {
     /// <summary>
