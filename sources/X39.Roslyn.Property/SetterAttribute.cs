@@ -9,7 +9,7 @@ namespace X39.Roslyn.Property;
 /// <remarks>
 /// By default, the setter method will be generated according to the specified 'ESetterMode' value.
 /// </remarks>
-[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
 public class SetterAttribute : Attribute
 {
     /// <summary>

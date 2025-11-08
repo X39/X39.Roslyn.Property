@@ -177,7 +177,7 @@ Some attributes are placeable on either the class or field.
 If the attribute is placed on the class, the attribute will be taken as a default for all fields.
 This also implies that the field attributes always take precedence over the class attributes.
 
-## `GeneratePropertiesAttribute` (class | field)
+## `GeneratePropertiesAttribute` (class | field | property)
 
 This attribute will make the source generator generate properties if no other attribute is desired.
 
@@ -228,6 +228,37 @@ public partial class MyClass
             if (_myProperty == value)
                 return;
             _myProperty = value;
+        }
+    }
+}
+```
+
+## `DefaultValueProperty` (property)
+
+This attribute will make the source generator generate fields with the given default value.
+
+### On the property
+
+```csharp
+// User-Code
+
+public partial class MyClass
+{
+    [DefaultValue<string>("")]
+    public partial string PartialProperty { get; set; }
+}
+
+// Generated-Code
+public partial class MyClass
+{
+    private string? ___partialProperty = "";
+    public partial string? PartialProperty
+    {
+        get => ___partialProperty;
+        set
+        {
+            if (value is null && ___partialProperty is null || (value?.Equals(___partialProperty) ?? false)) return;
+            ___partialProperty = value;
         }
     }
 }
@@ -450,7 +481,7 @@ public partial class MyClass
 }
 ```
 
-## `DisableAttributeTakeoverAttribute` (class | field)
+## `DisableAttributeTakeoverAttribute` (class | field | property)
 
 This attribute will make the source generator not take over any attributes from the field to the property.
 If the attribute is placed on the class, the source generator will not take over any attributes from any field.
@@ -663,7 +694,7 @@ public partial class MyClass
 }
 ```
 
-## `NotifyPropertyChangedAttribute` (class | field)
+## `NotifyPropertyChangedAttribute` (class | field | property)
 
 This attribute will make the source generator add a `PropertyChanged` event call to the setter of the property.
 If the attribute is placed on the class and the parameter is set to `true` (default: `true`),
@@ -780,7 +811,7 @@ public partial class MyClass
 }
 ```
 
-## `NotifyPropertyChangingAttribute` (class | field)
+## `NotifyPropertyChangingAttribute` (class | field | property)
 
 This attribute will make the source generator add a `PropertyChanging` event call to the setter of the property.
 If the attribute is placed on the class and the parameter is set to `true` (default: `true`),
@@ -928,7 +959,7 @@ public partial class MyClass
 }
 ```
 
-## `ValidationStrategyAttribute` (class | field)
+## `ValidationStrategyAttribute` (class | field | property)
 
 The validation strategy attribute is used to define how additional, validating properties should be handled, when
 the validation fails.
@@ -1075,7 +1106,7 @@ public partial class MyClass
 }
 ```
 
-## `PropertyEncapsulationAttribute` (field)
+## `PropertyEncapsulationAttribute` (field | property)
 
 This attribute will make the source generator encapsulate the property with the given access modifier.
 It cannot be placed on the class.
@@ -1145,7 +1176,7 @@ public partial class MyClass
 }
 ```
 
-## `EqualityCheckAttribute` (class | field)
+## `EqualityCheckAttribute` (class | field | property)
 
 This attribute will change how or if the equality check is performed.
 
@@ -1267,7 +1298,7 @@ public partial class MyClass
 }
 ```
 
-## `GuardAttribute` (field)
+## `GuardAttribute` (field | property)
 
 The guard attribute allows to make the source generator use custom validation methods to validate the property.
 See the [`ValidationStrategyAttribute`](#validationstrategyattribute-class--field) for more information on how to change

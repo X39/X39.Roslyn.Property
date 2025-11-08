@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -21,6 +22,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
     private const string RangeAttribute              = "System.ComponentModel.DataAnnotations.RangeAttribute";
     private const string MaxLengthAttribute          = "System.ComponentModel.DataAnnotations.MaxLengthAttribute";
     private const string GeneratePropertiesAttribute = "X39.Roslyn.Property.GeneratePropertiesAttribute";
+    private const string DefaultValueAttribute       = "X39.Roslyn.Property.DefaultValueAttribute<>";
 
     private const string NotifyOnAttribute = "X39.Roslyn.Property.NotifyOnAttribute";
     private const string GetterAttribute   = "X39.Roslyn.Property.GetterAttribute";
@@ -92,7 +94,9 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             if (symbolInfo.Symbol is not IMethodSymbol attributeSymbol)
                 continue; // if we can't get the symbol, ignore it
 
-            string attributeName = attributeSymbol.ContainingType.ToDisplayString();
+            var attributeName = attributeSymbol.IsGenericMethod
+                ? attributeSymbol.ContainingType.ConstructUnboundGenericType().ToDisplayString()
+                : attributeSymbol.ContainingType.ToDisplayString();
 
             // Check the full name of the attribute.
             if (attributeName == GeneratePropertiesAttribute)
@@ -130,10 +134,14 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             if (context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol is not IMethodSymbol attributeSymbol)
                 continue; // if we can't get the symbol, ignore it
 
-            string attributeName = attributeSymbol.ContainingType.ToDisplayString();
+            var attributeName = attributeSymbol.ContainingType.IsGenericType
+                ? attributeSymbol.ContainingType.ConstructUnboundGenericType().ToDisplayString()
+                : attributeSymbol.ContainingType.ToDisplayString();
 
             // Check the full name of the attribute.
             if (attributeName == GeneratePropertiesAttribute)
+                return (classDeclarationSyntax, true);
+            if (attributeName == DefaultValueAttribute)
                 return (classDeclarationSyntax, true);
             if (attributeName == NoPropertyAttribute)
                 return (classDeclarationSyntax, true);
@@ -189,6 +197,8 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             string? validationStrategy = null;
             string? propertyName = null;
             string? propertyEncapsulation = null;
+            object? defaultValue = null;
+            bool defaultValued = false;
             bool? virtualProperty = null;
             (string type, string from, string to)? range = null;
             int? maxLength = null;
@@ -203,7 +213,9 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             {
                 if (attribute.AttributeClass is null)
                     continue;
-                var attributeName = attribute.AttributeClass.ToDisplayString();
+                var attributeName = attribute.AttributeClass.IsGenericType
+                    ? attribute.AttributeClass.ConstructUnboundGenericType().ToDisplayString()
+                    : attribute.AttributeClass.ToDisplayString();
                 switch (attributeName)
                 {
                     case RangeAttribute when attribute.AttributeConstructor is not null
@@ -286,6 +298,10 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
 
                         break;
                     }
+                    case DefaultValueAttribute:
+                        defaultValued = true;
+                        defaultValue = attribute.ConstructorArguments[0].Value;
+                        break;
                     case GetterAttribute:
                         getterMode = (EGetterMode) (int) (attribute.ConstructorArguments[0].Value ?? 0);
                         break;
@@ -412,6 +428,8 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                 DisableAttributeTakeover     = disableAttributeTakeover,
                 GetterMode                   = getterMode,
                 SetterMode                   = setterMode,
+                DefaultValue = defaultValue,
+                DefaultValued = defaultValued,
             };
         }
 
@@ -528,6 +546,8 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                     builder.Append(propertyType);
                     builder.Append(" ");
                     builder.Append(propertySymbol.GetFieldName());
+                    if (currentGenInfo.DefaultValued)
+                        builder.Append($" = {currentGenInfo.DefaultValue.ToCSharp()}");
                     builder.AppendLine(";");
                 }
                 builder.Append("    "); // Indentation.

@@ -22,6 +22,8 @@ internal sealed class GenInfo
     public (List<string> attributes, bool inherit)? DisableAttributeTakeover { get; set; }
     public ESetterMode SetterMode { get; set; }
     public EGetterMode GetterMode { get; set; }
+    public object? DefaultValue { get; set; }
+    public bool DefaultValued { get; set; }
 
     public GenInfo WithDefaults(GenInfo defaultGenInfo)
     {
@@ -55,8 +57,10 @@ internal sealed class GenInfo
                 : PropertyAttributes is null && defaultGenInfo.PropertyAttributes is not null
                     ? (new List<string>(), false)
                     : PropertyAttributes,
-            GetterMode = GetterMode,
-            SetterMode = SetterMode,
+            GetterMode    = GetterMode,
+            SetterMode    = SetterMode,
+            DefaultValue  = DefaultValued ? DefaultValue : defaultGenInfo.DefaultValue,
+            DefaultValued = DefaultValued || defaultGenInfo.DefaultValued,
         };
     }
 
@@ -75,6 +79,7 @@ internal sealed class GenInfo
                    || EqualityCheck is not null
                    || GuardMethods.Count > 0
                    || PropertyAttributes is not null
-                   || DisableAttributeTakeover is not null);
+                   || DisableAttributeTakeover is not null
+                   || DefaultValued);
     }
 }
