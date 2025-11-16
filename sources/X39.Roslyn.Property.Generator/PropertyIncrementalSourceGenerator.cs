@@ -300,7 +300,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                     }
                     case DefaultValueAttribute:
                         defaultValued = true;
-                        defaultValue = attribute.ConstructorArguments[0].Value;
+                        defaultValue  = attribute.ConstructorArguments[0];
                         break;
                     case GetterAttribute:
                         getterMode = (EGetterMode) (int) (attribute.ConstructorArguments[0].Value ?? 0);
