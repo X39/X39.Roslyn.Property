@@ -603,8 +603,13 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                     builder.AppendLine("        {");
 
                     if (!isInit)
-                    {
                         WriteOutEqualityCheck(currentGenInfo, propertyType, builder, memberSymbol);
+
+                    WriteOutRangeValidation(currentGenInfo, builder, propertyName);
+                    WriteOutMaxLengthValidation(currentGenInfo, builder, propertyName);
+                    WriteOutGuards(currentGenInfo, builder, memberSymbol, propertyName);
+                    if (!isInit)
+                    {
                         WriteOutNotifyPropertyChanging(currentGenInfo, builder, propertyName);
                         foreach (var notifyProperty in notifyOnDictionary.TryGetValue(
                                      propertyName,
@@ -616,10 +621,6 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                             WriteOutNotifyPropertyChanging(currentGenInfo, builder, notifyProperty);
                         }
                     }
-
-                    WriteOutRangeValidation(currentGenInfo, builder, propertyName);
-                    WriteOutMaxLengthValidation(currentGenInfo, builder, propertyName);
-                    WriteOutGuards(currentGenInfo, builder, memberSymbol, propertyName);
                     builder.AppendLine($"            {memberSymbol.GetFieldName()} = value;");
                     if (!isInit)
                     {
