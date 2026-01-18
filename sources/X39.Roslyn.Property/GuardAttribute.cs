@@ -30,6 +30,47 @@ public class GuardAttribute : Attribute
     public string? ClassName { get; }
 
     /// <summary>
+    /// Gets or sets the arguments that will be passed to the guard method during validation.
+    /// </summary>
+    /// <remarks>
+    /// These arguments provide additional data that may be required by the guard method to validate changes to the property.
+    /// The arguments must match the parameters expected by the guard method beyond the required `oldValue` and `newValue`;
+    /// Sample method signature: `bool GuardMethodName(T oldValue, T newValue, string arg1, int arg2, ...)`
+    /// </remarks>
+    public object?[]? Arguments { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the old value of the property
+    /// should be passed to the guard method during validation.
+    /// </summary>
+    /// <remarks>
+    /// If set to <see langword="true"/>, the guard method is expected to accept the old value as a parameter.
+    /// If set to <see langword="false"/>, the guard method will not be provided with the old value.
+    /// Sample method signatures:
+    /// <list type="bullet">
+    /// <item>HasOldValue = false: `bool GuardMethodName(T newValue)`</item>
+    /// <item>HasOldValue = true: `bool GuardMethodName(T oldValue, T newValue)`</item>
+    /// </list>
+    /// </remarks>
+    public bool HasOldValue { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the guard method will be provided with the new value of the property during validation.
+    /// </summary>
+    /// <remarks>
+    /// If set to <see langword="true"/>, the guard method is expected to accept the new value as a parameter.
+    /// If set to <see langword="false"/>, the guard method will not be provided with the new value.
+    /// Sample method signatures:
+    /// <list type="bullet">
+    /// <item>HasNewValue = false: `bool GuardMethodName(T oldValue)`</item>
+    /// <item>HasNewValue = true: `bool GuardMethodName(T oldValue, T newValue)`</item>
+    /// <item>HasOldValue = false: `bool GuardMethodName(T newValue)`</item>
+    /// <item>HasOldValue = false, HasNewValue = false: `bool GuardMethodName()`</item>
+    /// </list>
+    /// </remarks>
+    public bool HasNewValue { get; set; } = true;
+
+    /// <summary>
     /// Allows to guard a property from being changed, failing the validation if the guard method does not return true.
     /// </summary>
     /// <remarks>

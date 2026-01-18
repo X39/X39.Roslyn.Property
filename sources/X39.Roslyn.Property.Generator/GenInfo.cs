@@ -17,7 +17,7 @@ internal sealed class GenInfo
     public (string type, string from, string to)? Range { get; set; }
     public int? MaxLength { get; set; }
     public (string mode, string epsilonF, string epsilonD, string? custom)? EqualityCheck { get; set; }
-    public List<(string methodName, string? className)> GuardMethods { get; set; } = new();
+    public List<(string methodName, string? className, object?[]? arguments, bool hasOldValue, bool hasNewValue)> GuardMethods { get; set; } = new();
     public (List<string> attributes, bool inherit)? PropertyAttributes { get; set; }
     public (List<string> attributes, bool inherit)? DisableAttributeTakeover { get; set; }
     public ESetterMode SetterMode { get; set; }

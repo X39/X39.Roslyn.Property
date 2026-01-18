@@ -207,7 +207,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             (string mode, string epsilonF, string epsilonD, string? custom)? equalityCheck = null;
             (List<string> attributes, bool inherit)? propertyAttributes = null;
             (List<string> attributes, bool inherit)? disableAttributeTakeover = null;
-            List<(string methodName, string? className)> guardMethods = new();
+            List<(string methodName, string? className, object?[]? arguments, bool hasOldValue, bool hasNewValue)> guardMethods = new();
             EGetterMode getterMode = default;
             ESetterMode setterMode = default;
 
@@ -405,7 +405,10 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                                         ?? attribute
                                             .NamedArguments.FirstOrDefault(a => a.Key == "className")
                                             .Value.Value?.ToString();
-                        guardMethods.Add((methodName, className));
+                        var hasOldValue = attribute.NamedArguments.FirstOrDefault(e => e.Key == "HasOldValue").Value.GetValue() is true or null;
+                        var hasNewValue = attribute.NamedArguments.FirstOrDefault(e => e.Key == "HasNewValue").Value.GetValue() is true or null;
+                        var arguments = attribute.NamedArguments.FirstOrDefault(e => e.Key == "Arguments").Value.GetValue() as object[];
+                        guardMethods.Add((methodName, className, arguments, hasOldValue, hasNewValue));
                         break;
                     }
                 }
@@ -751,13 +754,51 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
         string propertyName
     )
     {
+        var reasonBuilder = new StringBuilder();
         foreach (var guardMethod in currentGenInfo.GuardMethods)
         {
+            reasonBuilder.Clear();
             var method = guardMethod.className is null
                 ? guardMethod.methodName
                 : string.Concat(guardMethod.className, ".", guardMethod.methodName);
-            builder.AppendLine($"            if (!{method}({symbol.GetFieldName()}, value))");
-            WriteOutValidationStrategyOutcome(currentGenInfo, builder, propertyName, $"Guard method {method} failed");
+            reasonBuilder.Append($"Guard method {method}");
+                
+            builder.Append("            ");
+            builder.Append($"if (!{method}(");
+            var comma = false;
+            if (guardMethod.hasOldValue)
+            {
+                builder.Append(symbol.GetFieldName());
+                comma = true;
+            }
+            if (guardMethod.hasNewValue)
+            {
+                if (comma)
+                    builder.Append(", ");
+                builder.Append("value");
+                comma = true;
+            }
+            if (guardMethod.arguments?.Length > 0)
+            {
+                reasonBuilder.Append(" with arguments [");
+                var reasonComma = false;
+                foreach (var argument in guardMethod.arguments)
+                {
+                    if (comma)
+                        builder.Append(", ");
+                    var csharpArgument = argument.ToCSharp();
+                    builder.Append(csharpArgument);
+                    if (reasonComma)
+                        reasonBuilder.Append(", ");
+                    reasonBuilder.Append(csharpArgument);
+                    comma = true;
+                    reasonComma = true;
+                }
+                reasonBuilder.Append("]");
+            }
+            builder.AppendLine("))");
+            reasonBuilder.Append(" failed");
+            WriteOutValidationStrategyOutcome(currentGenInfo, builder, propertyName, reasonBuilder.ToString());
         }
     }
 
@@ -855,7 +896,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             // ReSharper disable once RedundantCaseLabel
             case null:
                 builder.AppendLine(
-                    $"                throw new System.ArgumentException(\"Validation of {propertyName} failed: {reason}\", nameof(value));"
+                    $"                throw new System.ArgumentException({string.Concat($"Validation of {propertyName} failed: ", reason).ToCSharp()}, nameof(value));"
                 );
                 break;
             case "1" when currentGenInfo.NotifyPropertyChanged is true:

@@ -36,11 +36,7 @@ public static class TypedConstantExtensions
                 string.Join(", ", self.Values.Select(ToCSharp)),
                 " }"
             ),
-            TypedConstantKind.Array => string.Concat(
-                "[",
-                string.Join(", ", self.Values.Select(ToCSharp)),
-                "]"
-            ),
+            TypedConstantKind.Array => string.Concat("[", string.Join(", ", self.Values.Select(ToCSharp)), "]"),
             _ => throw new InvalidEnumArgumentException(nameof(self), (int) self.Kind, typeof(TypedConstantKind))
         };
     }
@@ -66,40 +62,86 @@ public static class TypedConstantExtensions
             decimal value        => value.ToString(CultureInfo.InvariantCulture),
             char value           => $"'{value}'",
             string { Length: 0 } => "\"\"",
-            string value         => string.Concat("\"\"\"", value, "\"\"\""),
+            string value => value.All(c => c is not ('\0' or '\\' or '\n' or '\r' or '"'))
+                ? string.Concat("\"", value, "\"")
+                : string.Concat("\"\"\"", value, "\"\"\""),
             string[] values => string.Concat(
-                "new string[] {",
+                "new string[] { ",
                 string.Join(", ", values.Select(e => e.ToCSharp())),
-                "}"
+                " }"
             ),
             Enum value     => string.Concat(value.GetType().FullName, ".", Enum.GetName(value.GetType(), value)),
             Type value     => string.Concat(value.FullName),
-            byte[] values  => string.Concat("new byte[] {", string.Join(", ", values.Select(e => e.ToCSharp())), "}"),
-            sbyte[] values => string.Concat("new sbyte[] {", string.Join(", ", values.Select(e => e.ToCSharp())), "}"),
-            short[] values => string.Concat("new short[] {", string.Join(", ", values.Select(e => e.ToCSharp())), "}"),
+            byte[] values  => string.Concat("new byte[] { ", string.Join(", ", values.Select(e => e.ToCSharp())), " }"),
+            sbyte[] values => string.Concat("new sbyte[] { ", string.Join(", ", values.Select(e => e.ToCSharp())), " }"),
+            short[] values => string.Concat("new short[] { ", string.Join(", ", values.Select(e => e.ToCSharp())), " }"),
             ushort[] values => string.Concat(
                 "new ushort[] {",
                 string.Join(", ", values.Select(e => e.ToCSharp())),
                 "}"
             ),
-            int[] values   => string.Concat("new int[] {", string.Join(", ", values.Select(e => e.ToCSharp())), "}"),
-            uint[] values  => string.Concat("new uint[] {", string.Join(", ", values.Select(e => e.ToCSharp())), "}"),
-            long[] values  => string.Concat("new long[] {", string.Join(", ", values.Select(e => e.ToCSharp())), "}"),
-            ulong[] values => string.Concat("new ulong[] {", string.Join(", ", values.Select(e => e.ToCSharp())), "}"),
-            float[] values => string.Concat("new float[] {", string.Join(", ", values.Select(e => e.ToCSharp())), "}"),
+            int[] values   => string.Concat("new int[] { ", string.Join(", ", values.Select(e => e.ToCSharp())), " }"),
+            uint[] values  => string.Concat("new uint[] { ", string.Join(", ", values.Select(e => e.ToCSharp())), " }"),
+            long[] values  => string.Concat("new long[] { ", string.Join(", ", values.Select(e => e.ToCSharp())), " }"),
+            ulong[] values => string.Concat("new ulong[] { ", string.Join(", ", values.Select(e => e.ToCSharp())), " }"),
+            float[] values => string.Concat("new float[] { ", string.Join(", ", values.Select(e => e.ToCSharp())), " }"),
             double[] values => string.Concat(
-                "new double[] {",
+                "new double[] { ",
                 string.Join(", ", values.Select(e => e.ToCSharp())),
-                "}"
+                " }"
             ),
             decimal[] values => string.Concat(
-                "new decimal[] {",
+                "new decimal[] { ",
                 string.Join(", ", values.Select(e => e.ToCSharp())),
-                "}"
+                " }"
             ),
-            char[] values  => string.Concat("new char[] {", string.Join(", ", values.Select(e => e.ToCSharp())), "}"),
-            object[] array => string.Concat("new object[] {", array.Select(e => e.ToCSharp()), "}"),
+            char[] values  => string.Concat("new char[] { ", string.Join(", ", values.Select(e => e.ToCSharp())), " }"),
+            object[] array => string.Concat("new ", array.GetCSharpType()," { ", string.Join(", ", array.Select(e => e.ToCSharp())), " }"),
             _              => throw new Exception($"Value {self} has no CSharp representation"),
+        };
+    }
+
+    public static string GetCSharpType(this object? self)
+    {
+        static string SolveForArray(object[] array)
+        {
+            if (array.Length == 0)
+                return "object[]";
+            var types = array.Select(e => e.GetCSharpType()).Distinct().ToArray();
+            return types.Length is 1 ? string.Concat(types[0], "[]") : "object[]";
+        }
+        return self switch
+        {
+            string         => "string",
+            char           => "char",
+            bool           => "bool",
+            byte           => "byte",
+            sbyte          => "sbyte",
+            short          => "short",
+            ushort         => "ushort",
+            int            => "int",
+            uint           => "uint",
+            long           => "long",
+            ulong          => "ulong",
+            float          => "float",
+            double         => "double",
+            decimal        => "decimal",
+            string[]       => "string",
+            char[]         => "char",
+            bool[]         => "bool",
+            byte[]         => "byte",
+            sbyte[]        => "sbyte",
+            short[]        => "short",
+            ushort[]       => "ushort",
+            int[]          => "int",
+            uint[]         => "uint",
+            long[]         => "long",
+            ulong[]        => "ulong",
+            float[]        => "float",
+            double[]       => "double",
+            decimal[]      => "decimal",
+            object[] array => SolveForArray(array),
+            _ => "object",
         };
     }
 
