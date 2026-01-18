@@ -127,7 +127,9 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
         foreach (var field in Enumerable
                      .Empty<MemberDeclarationSyntax>()
                      .Concat(classDeclarationSyntax.Members.OfType<FieldDeclarationSyntax>())
-                     .Concat(classDeclarationSyntax.Members.OfType<PropertyDeclarationSyntax>().Where(e => e.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))))
+                     .Where(e => !e.Modifiers.Any(m => m.IsKind(SyntaxKind.ConstKeyword)))
+                     .Concat(classDeclarationSyntax.Members.OfType<PropertyDeclarationSyntax>()
+                         .Where(e => e.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))))
         foreach (AttributeListSyntax attributeListSyntax in field.AttributeLists)
         foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
         {
@@ -512,7 +514,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             var notifyOnDictionary = CreateNotifyOnDictionary(classSymbol);
             foreach (var memberSymbol in Enumerable
                          .Empty<ISymbol>()
-                         .Concat(classSymbol.GetMembers().OfType<IFieldSymbol>())
+                         .Concat(classSymbol.GetMembers().OfType<IFieldSymbol>().Where(e => e.IsConst is false))
                          .Concat(classSymbol.GetMembers().OfType<IPropertySymbol>().Where(e => e.IsPartialDefinition)))
             {
                 if (memberSymbol.Name.Length > 0 && memberSymbol.Name[0] == '<')
