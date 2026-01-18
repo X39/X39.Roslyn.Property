@@ -1,55 +1,73 @@
 <!-- TOC -->
-* [X39.Roslyn.Property](#x39sourcegeneratorsproperty)
+* [X39.Roslyn.Property](#x39roslynproperty)
 * [Quick Start](#quick-start)
 * [Common fixes with source generators](#common-fixes-with-source-generators)
   * [The Source-Generator is not working (After installing the package; After Building)](#the-source-generator-is-not-working-after-installing-the-package-after-building)
   * [`dotnet build` errors that it cannot find the generated output](#dotnet-build-errors-that-it-cannot-find-the-generated-output)
   * [Rider does not recognize the source generator](#rider-does-not-recognize-the-source-generator)
 * [When and how are properties generated?](#when-and-how-are-properties-generated)
+* [What about documentation?](#what-about-documentation)
+* [Property Name](#property-name)
+* [`readonly` and `const` handling](#readonly-and-const-handling)
+* [Partial Properties](#partial-properties)
 * [Attributes](#attributes)
-  * [`GeneratePropertiesAttribute` (class | field)](#generatepropertiesattribute-class--field)
+  * [`GeneratePropertiesAttribute` (class | field | property)](#generatepropertiesattribute-class--field--property)
     * [On the class](#on-the-class)
     * [On the field](#on-the-field)
-  * [`DisableAttributeTakeoverAttribute` (class | field)](#disableattributetakeoverattribute-class--field)
-    * [On the class](#on-the-class-1)
+  * [`DefaultValueProperty` (property)](#defaultvalueproperty-property)
+    * [On the property](#on-the-property)
+  * [`GetterAttribute` (field)](#getterattribute-field)
     * [On the field](#on-the-field-1)
-  * [`NoPropertyAttribute` (field)](#nopropertyattribute-field)
+  * [`SetterAttribute` (field)](#setterattribute-field)
+    * [On the field (`ESetterMode.Default`)](#on-the-field-esettermodedefault)
+    * [On the field (`ESetterMode.Set`)](#on-the-field-esettermodeset)
+    * [On the field (`ESetterMode.Init`)](#on-the-field-esettermodeinit)
+    * [On the field (`ESetterMode.None`)](#on-the-field-esettermodenone)
+  * [`DefaultValueAttribute<T>` (field | property)](#defaultvalueattributet-field--property)
     * [On the field](#on-the-field-2)
+  * [`NotifyOnAttribute` (property)](#notifyonattribute-property)
+    * [On the property](#on-the-property-1)
+  * [`DisableAttributeTakeoverAttribute` (class | field | property)](#disableattributetakeoverattribute-class--field--property)
+    * [On the class](#on-the-class-1)
+    * [On the field](#on-the-field-3)
+  * [`NoPropertyAttribute` (field)](#nopropertyattribute-field)
+    * [On the field](#on-the-field-4)
   * [`PropertyAttributeAttribute` (class | field)](#propertyattributeattribute-class--field)
     * [On the class](#on-the-class-2)
     * [On the field (inherit: false)](#on-the-field-inherit-false)
     * [On the field (inherit: true)](#on-the-field-inherit-true)
-  * [`NotifyPropertyChangedAttribute` (class | field)](#notifypropertychangedattribute-class--field)
+  * [`NotifyPropertyChangedAttribute` (class | field | property)](#notifypropertychangedattribute-class--field--property)
     * [On the class with true](#on-the-class-with-true)
     * [On the class with false](#on-the-class-with-false)
     * [On the field with true](#on-the-field-with-true)
     * [On the field with false](#on-the-field-with-false)
-  * [`NotifyPropertyChangingAttribute` (class | field)](#notifypropertychangingattribute-class--field)
+  * [`NotifyPropertyChangingAttribute` (class | field | property)](#notifypropertychangingattribute-class--field--property)
     * [On the class with true](#on-the-class-with-true-1)
     * [On the class with false](#on-the-class-with-false-1)
     * [On the field with true](#on-the-field-with-true-1)
     * [On the field with false](#on-the-field-with-false-1)
   * [`PropertyNameAttribute` (field)](#propertynameattribute-field)
-    * [On the field](#on-the-field-3)
-  * [`ValidationStrategyAttribute` (class | field)](#validationstrategyattribute-class--field)
+    * [On the field](#on-the-field-5)
+  * [`ValidationStrategyAttribute` (class | field | property)](#validationstrategyattribute-class--field--property)
     * [Supported Validations](#supported-validations)
     * [Available Strategies](#available-strategies)
     * [On the class  (`EValidationStrategy.Exception`)](#on-the-class-evalidationstrategyexception)
     * [On the field (`EValidationStrategy.Exception`)](#on-the-field-evalidationstrategyexception)
     * [On the class  (`EValidationStrategy.Rollback`)](#on-the-class-evalidationstrategyrollback)
     * [On the class  (`EValidationStrategy.Ignore`)](#on-the-class-evalidationstrategyignore)
-  * [`PropertyEncapsulationAttribute` (field)](#propertyencapsulationattribute-field)
-    * [On the field](#on-the-field-4)
+  * [`PropertyEncapsulationAttribute` (class | field | property)](#propertyencapsulationattribute-class--field--property)
+    * [On the field](#on-the-field-6)
   * [`VirtualPropertyAttribute` (field)](#virtualpropertyattribute-field)
-    * [On the field](#on-the-field-5)
-  * [`EqualityCheckAttribute` (class | field)](#equalitycheckattribute-class--field)
+    * [On the field](#on-the-field-7)
+  * [`EqualityCheckAttribute` (class | field | property)](#equalitycheckattribute-class--field--property)
     * [Supported Equality Modes](#supported-equality-modes)
     * [On the class  (`EEqualityCheckMode.Default`)](#on-the-class-eequalitycheckmodedefault)
     * [On the class  (`EEqualityCheckMode.Custom`)](#on-the-class-eequalitycheckmodecustom)
     * [On the class  (`EEqualityCheckMode.None`)](#on-the-class-eequalitycheckmodenone)
     * [On the field  (`EEqualityCheckMode.Default`)](#on-the-field-eequalitycheckmodedefault)
-  * [`GuardAttribute` (field)](#guardattribute-field)
-    * [On the field](#on-the-field-6)
+  * [`GuardAttribute` (field | property)](#guardattribute-field--property)
+    * [On the field (Standard usage)](#on-the-field-standard-usage)
+    * [On the field (Advanced usage with custom arguments)](#on-the-field-advanced-usage-with-custom-arguments)
 * [Project Notes](#project-notes)
   * [Building](#building)
   * [Test coverage](#test-coverage)
@@ -63,12 +81,19 @@
 
 This library adds a source generator that generates properties for a given class.
 
-By default, any property put onto a field will also be taken over to the generated property.
-You can use the [`DisableAttributeTakeoverAttribute`](#disableattributetakeoverattribute-class--field) to disable this
+By default, any attribute placed on a field will also be copied to the generated property.
+You can use the [`DisableAttributeTakeoverAttribute`](#disableattributetakeoverattribute-class--field--property) to disable this
 behavior.
 
 To enable the source generator for a class, you have to add one of the class-level attributes to the class (
-See [Attributes](#Attributes)).
+See [Attributes](#attributes)).
+
+The generator supports:
+- Regular classes
+- Generic classes
+- Partial properties (reverse generation: backing field from property)
+- Nested classes
+- Records and record structs
 
 # Quick Start
 
@@ -142,7 +167,7 @@ Documenting the generated properties is as simple as documenting the field.
 Like, really, just document the field and the documentation will be copied
 over to the property. No need to break workflow in any way.
 
-### Propety Name
+# Property Name
 
 The property **name** will be the name of the field with the first letter capitalized and an optional underscore
 removed.
@@ -159,17 +184,56 @@ For a more "example driven" approach to this explanation, see the following tabl
 | `__abc`     | `_abc`        |
 | `_abc_`     | `Abc_`        |
 
-### `readonly` handling
+# `readonly` and `const` handling
+
 If the field is `readonly`, the property will be `readonly` too.
 What this means is that the property will be created
 with a normal `get` getter and a `init` setter.
 
-See [`SetterAttribute`](#SetterAttribute) to customize whether the setter
+If the field is `const`, no property will be generated for it.
+
+See [`SetterAttribute`](#setterattribute-field) to customize whether the setter
 should be generated at all.
 
-Similarly, see [`GetterAttribute`](#GetterAttribute) to customize whether the getter
+Similarly, see [`GetterAttribute`](#getterattribute-field) to customize whether the getter
 should be generated at all.
 
+# Partial Properties
+
+The source generator also supports generating backing fields for partial properties.
+This allows you to define a partial property and have the source generator generate
+the backing field and implementation for you.
+
+```csharp
+// User-Code
+using X39.Roslyn.Property;
+
+[GenerateProperties]
+public partial class MyClass
+{
+    public partial string MyProperty { get; set; }
+}
+
+// Generated-Code
+#nullable enable
+public partial class MyClass
+{
+    private string? ___myProperty;
+    public partial string? MyProperty
+    {
+        get => ___myProperty;
+        set
+        {
+            if (value is null && ___myProperty is null || (value?.Equals(___myProperty) ?? false))
+                return;
+            ___myProperty = value;
+        }
+    }
+}
+```
+
+You can also use attributes like `NotifyPropertyChanged`, `DefaultValue`, `Guard`, etc. on partial properties
+to customize their behavior just like with fields.
 
 # Attributes
 
@@ -180,6 +244,7 @@ This also implies that the field attributes always take precedence over the clas
 ## `GeneratePropertiesAttribute` (class | field | property)
 
 This attribute will make the source generator generate properties if no other attribute is desired.
+It can also be applied to partial properties to generate backing fields.
 
 ### On the class
 
@@ -437,6 +502,39 @@ public partial class MyClass
     public int MyProperty
     {
         get => _myProperty;
+    }
+}
+```
+
+## `DefaultValueAttribute<T>` (field | property)
+
+This attribute allows to specify a default value for the field or for generated backing fields of partial properties.
+It will be used to initialize the field in the generated code.
+The value can be any valid C# expression that can be serialized to code.
+
+### On the field
+
+```csharp
+// User-Code
+public partial class MyClass
+{
+    [DefaultValue<int>(42)]
+    private int _myProperty;
+}
+
+// Generated-Code
+public partial class MyClass
+{
+    private int _myProperty = 42;
+    public int MyProperty
+    {
+        get => _myProperty;
+        set
+        {
+            if (_myProperty == value)
+                return;
+            _myProperty = value;
+        }
     }
 }
 ```
@@ -966,9 +1064,13 @@ the validation fails.
 
 ### Supported Validations
 
-- `System.ComponentModel.DataAnnotations.RangeAttribute`
-- `System.ComponentModel.DataAnnotations.MaxLengthAttribute`
-- [`GuardAttribute`](#guardattribute-field)
+The following validations from `System.ComponentModel.DataAnnotations` are supported:
+- `RangeAttribute`
+  This attribute will generate a range check for the property.
+- `MaxLengthAttribute`
+  This attribute will generate a maximum length check for the property.
+
+Additionally, custom validation can be performed using the [`GuardAttribute`](#guardattribute-field).
 
 ### Available Strategies
 
@@ -1106,14 +1208,15 @@ public partial class MyClass
 }
 ```
 
-## `PropertyEncapsulationAttribute` (field | property)
+## `PropertyEncapsulationAttribute` (class | field | property)
 
 This attribute will make the source generator encapsulate the property with the given access modifier.
-It cannot be placed on the class.
+When placed on the class, it sets the default encapsulation for all generated properties.
+When placed on a field or property, it overrides the class-level setting for that specific property.
 
 Possible values are:
 
-- `EPropertyEncapsulation.Public`
+- `EPropertyEncapsulation.Public` (default)
 - `EPropertyEncapsulation.Protected`
 - `EPropertyEncapsulation.Internal`
 - `EPropertyEncapsulation.Private`
@@ -1178,7 +1281,8 @@ public partial class MyClass
 
 ## `EqualityCheckAttribute` (class | field | property)
 
-This attribute will change how or if the equality check is performed.
+This attribute will change how or if the equality check is performed before setting a property value.
+When placed on the class, it sets the default equality check behavior for all generated properties.
 
 ### Supported Equality Modes
 
@@ -1301,16 +1405,21 @@ public partial class MyClass
 ## `GuardAttribute` (field | property)
 
 The guard attribute allows to make the source generator use custom validation methods to validate the property.
-See the [`ValidationStrategyAttribute`](#validationstrategyattribute-class--field) for more information on how to change
-validation
-handling.
+See the [`ValidationStrategyAttribute`](#validationstrategyattribute-class--field--property) for more information on how to change
+validation handling.
 It cannot be placed on the class.
 
-The guard method must be a method with the signature `bool MethodName(T oldValue, T newValue)` and has to be accessible
-from the generated code.
+The guard method signature is flexible and supports:
+- `bool MethodName(T oldValue, T newValue)` - Standard signature with both old and new values
+- `bool MethodName(T newValue)` - Only new value (set `HasOldValue = false`)
+- `bool MethodName(T oldValue)` - Only old value (set `HasNewValue = false`)
+- `bool MethodName()` - No values (set both `HasOldValue` and `HasNewValue` to `false`)
+- Additional arguments can be passed via the `Arguments` property
+
+The method must be accessible from the generated code.
 Multiple guards may be used with all of them being checked in the order they are placed on the field.
 
-### On the field
+### On the field (Standard usage)
 
 ```csharp
 // User-Code
@@ -1343,6 +1452,34 @@ public partial class MyClass
 }
 ```
 
+### On the field (Advanced usage with custom arguments)
+
+```csharp
+// User-Code
+public partial class MyClass
+{
+    private static bool ValidateRange(int newValue, int min, int max) => newValue >= min && newValue <= max;
+
+    [Guard("ValidateRange", HasOldValue = false, Arguments = new object[] { 0, 100 })]
+    private int _myProperty;
+}
+
+// Generated-Code
+public partial class MyClass
+{
+    public int MyProperty
+    {
+        get => _myProperty;
+        set
+        {
+            if (!ValidateRange(value, 0, 100))
+                throw new System.ArgumentException("Validation of Field failed: Guard method ValidateRange failed", nameof(value));
+            _myProperty = value;
+        }
+    }
+}
+```
+
 # Project Notes
 
 This project is part of my personal utility libraries i use in my projects.
@@ -1355,8 +1492,9 @@ includes steps for restoring dependencies, building the project, and publishing 
 
 ## Test coverage
 
-This project is covered by unit tests for the generator only.
-This means that the generated code is not yet tested.
+This project is covered by unit tests for the generator.
+The tests verify that the generator produces the expected code for various attribute configurations.
+Tests can be found in the `tests/X39.Roslyn.Property.Tests` directory.
 
 ## Contributing
 

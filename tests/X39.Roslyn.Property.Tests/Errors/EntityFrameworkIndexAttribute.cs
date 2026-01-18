@@ -184,7 +184,7 @@ public class EntityFrameworkIndexAttribute
         );
         Assert.NotNull(selfDir);
         var compilation = CSharpCompilation.Create(
-            nameof(PropertyIncrementalSourceGeneratorTests),
+            nameof(EntityFrameworkIndexAttribute),
             [CSharpSyntaxTree.ParseText(Code)],
             assemblies
                 .Select(assembly => assembly.Location)
