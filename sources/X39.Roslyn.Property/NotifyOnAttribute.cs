@@ -21,7 +21,7 @@ namespace X39.Roslyn.Property;
 /// // [...]
 /// </code>
 /// </example>
-[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = true, Inherited = false)]
 public class NotifyOnAttribute : Attribute
 {
     /// <summary>
