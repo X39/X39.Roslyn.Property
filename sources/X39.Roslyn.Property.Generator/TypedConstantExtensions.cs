@@ -11,9 +11,10 @@ public static class TypedConstantExtensions
 {
     public static object? GetValue(this TypedConstant self)
     {
+        if (self.Kind == TypedConstantKind.Error)
+            return null;
         var value = self.Kind switch
         {
-            TypedConstantKind.Error => self.Value,
             TypedConstantKind.Primitive => self.Value,
             TypedConstantKind.Enum => self.Value,
             TypedConstantKind.Type => self.Value,

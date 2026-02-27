@@ -227,11 +227,13 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                     case RangeAttribute when attribute.AttributeConstructor is not null
                                              && attribute.ConstructorArguments.Length is 2 or 3:
                     {
-                        var first = attribute.AttributeConstructor.Parameters[0].Type.ToDisplayString();
+                        var first = attribute.AttributeConstructor.Parameters.Length > 0
+                            ? attribute.AttributeConstructor.Parameters[0].Type.ToDisplayString()
+                            : "unknown";
                         string rangeAttribute;
                         switch (first)
                         {
-                            case "double":
+                            case "double" when attribute.ConstructorArguments.Length >= 2:
                             {
                                 var from = attribute.ConstructorArguments[0].Value?.ToString().Replace(',', '.')
                                            ?? "0.0";
@@ -240,7 +242,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                                 rangeAttribute = $"[{attributeName}({from}, {to})]";
                                 break;
                             }
-                            case "int":
+                            case "int" when attribute.ConstructorArguments.Length >= 2:
                             {
                                 var from = attribute.ConstructorArguments[0].Value?.ToString() ?? "0";
                                 var to = attribute.ConstructorArguments[1].Value?.ToString() ?? "0";
@@ -305,19 +307,27 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                         break;
                     }
                     case DefaultValueAttribute:
+                        if (attribute.ConstructorArguments.Length < 1)
+                            continue;
                         defaultValued = true;
                         defaultValue  = attribute.ConstructorArguments[0];
                         defaultValueIsRaw = false;
                         break;
                     case DefaultValueAsStringAttribute:
+                        if (attribute.ConstructorArguments.Length < 1)
+                            continue;
                         defaultValued = true;
                         defaultValue  = attribute.ConstructorArguments[0].Value;
                         defaultValueIsRaw = true;
                         break;
                     case GetterAttribute:
+                        if (attribute.ConstructorArguments.Length < 1)
+                            continue;
                         getterMode = (EGetterMode) (int) (attribute.ConstructorArguments[0].Value ?? 0);
                         break;
                     case SetterAttribute:
+                        if (attribute.ConstructorArguments.Length < 1)
+                            continue;
                         setterMode = (ESetterMode) (int) (attribute.ConstructorArguments[0].Value ?? 0);
                         break;
                     case DisableAttributeTakeoverAttribute:
@@ -327,7 +337,9 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                         break;
                     case PropertyAttributeAttribute:
                     {
-                        var name = attribute.ConstructorArguments[0].Value?.ToString()
+                        var name = (attribute.ConstructorArguments.Length > 0
+                                       ? attribute.ConstructorArguments[0].Value?.ToString()
+                                       : null)
                                    ?? attribute
                                        .NamedArguments.FirstOrDefault(a => a.Key == "name")
                                        .Value.Value?.ToString();
@@ -339,9 +351,13 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                         if (!name.StartsWith("[", StringComparison.Ordinal)
                             && !name.EndsWith("]", StringComparison.Ordinal))
                             name = string.Concat("[", name, "]");
-                        var inherit = (bool?) attribute.ConstructorArguments[1].Value
-                                      ?? attribute.NamedArguments.FirstOrDefault(a => a.Key == "inherit")
-                                          .Value.Value is true;
+                        var inherit = (attribute.ConstructorArguments.Length > 1
+                                          ? (bool?) attribute.ConstructorArguments[1].Value
+                                          : null)
+                                      ?? (attribute.NamedArguments.Any(a => a.Key == "inherit")
+                                          ? attribute.NamedArguments.First(a => a.Key == "inherit").Value.Value as bool?
+                                          : null)
+                                      ?? false;
                         if (propertyAttributes is null)
                             propertyAttributes = (new List<string> { name }, inherit);
                         else
@@ -360,43 +376,43 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                         generateProperty = false;
                         break;
                     case NotifyPropertyChangedAttribute:
-                        notifyPropertyChanged       = (bool?) attribute.ConstructorArguments[0].Value ?? true;
-                        notifyPropertyChangedMethod = (string?) attribute.ConstructorArguments[1].Value ?? null;
+                        notifyPropertyChanged       = (attribute.ConstructorArguments.Length > 0 ? (bool?) attribute.ConstructorArguments[0].Value : null) ?? true;
+                        notifyPropertyChangedMethod = (attribute.ConstructorArguments.Length > 1 ? (string?) attribute.ConstructorArguments[1].Value : null);
                         break;
                     case NotifyPropertyChangingAttribute:
-                        notifyPropertyChanging       = (bool?) attribute.ConstructorArguments[0].Value ?? true;
-                        notifyPropertyChangingMethod = (string?) attribute.ConstructorArguments[1].Value ?? null;
+                        notifyPropertyChanging       = (attribute.ConstructorArguments.Length > 0 ? (bool?) attribute.ConstructorArguments[0].Value : null) ?? true;
+                        notifyPropertyChangingMethod = (attribute.ConstructorArguments.Length > 1 ? (string?) attribute.ConstructorArguments[1].Value : null);
                         break;
                     case ValidationStrategyAttribute:
-                        validationStrategy = attribute.ConstructorArguments[0].Value?.ToString() ?? "Exception";
+                        validationStrategy = (attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value?.ToString() : null) ?? "Exception";
                         break;
                     case PropertyNameAttribute:
-                        propertyName = attribute.ConstructorArguments[0].Value?.ToString();
+                        propertyName = attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value?.ToString() : null;
                         break;
                     case PropertyEncapsulationAttribute:
-                        propertyEncapsulation = attribute.ConstructorArguments[0].Value?.ToString();
+                        propertyEncapsulation = attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value?.ToString() : null;
                         break;
                     case VirtualPropertyAttribute:
                         virtualProperty = true;
                         break;
                     case EqualityCheckAttribute:
                     {
-                        var mode = attribute.ConstructorArguments[0].Value?.ToString()
+                        var mode = (attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value?.ToString() : null)
                                    ?? attribute
                                        .NamedArguments.FirstOrDefault(a => a.Key == "mode")
                                        .Value.Value?.ToString()
                                    ?? "Default";
-                        var epsilonF = attribute.ConstructorArguments[1].Value?.ToString()
+                        var epsilonF = (attribute.ConstructorArguments.Length > 1 ? attribute.ConstructorArguments[1].Value?.ToString() : null)
                                        ?? attribute
                                            .NamedArguments.FirstOrDefault(a => a.Key == "FloatEpsilon")
                                            .Value.Value?.ToString()
                                        ?? "Single.Epsilon";
-                        var epsilonD = attribute.ConstructorArguments[2].Value?.ToString()
+                        var epsilonD = (attribute.ConstructorArguments.Length > 2 ? attribute.ConstructorArguments[2].Value?.ToString() : null)
                                        ?? attribute
                                            .NamedArguments.FirstOrDefault(a => a.Key == "DoubleEpsilon")
                                            .Value.Value?.ToString()
                                        ?? "Double.Epsilon";
-                        var custom = attribute.ConstructorArguments[3].Value?.ToString()
+                        var custom = (attribute.ConstructorArguments.Length > 3 ? attribute.ConstructorArguments[3].Value?.ToString() : null)
                                      ?? attribute
                                          .NamedArguments.FirstOrDefault(a => a.Key == "Custom")
                                          .Value.Value?.ToString();
@@ -405,19 +421,25 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                     }
                     case GuardAttribute:
                     {
-                        var methodName = attribute.ConstructorArguments[0].Value?.ToString()
+                        var methodName = (attribute.ConstructorArguments.Length > 0 ? attribute.ConstructorArguments[0].Value?.ToString() : null)
                                          ?? attribute
                                              .NamedArguments.FirstOrDefault(a => a.Key == "methodName")
                                              .Value.Value?.ToString();
                         if (methodName is null)
                             continue;
-                        var className = attribute.ConstructorArguments[1].Value?.ToString()
+                        var className = (attribute.ConstructorArguments.Length > 1 ? attribute.ConstructorArguments[1].Value?.ToString() : null)
                                         ?? attribute
                                             .NamedArguments.FirstOrDefault(a => a.Key == "className")
                                             .Value.Value?.ToString();
-                        var hasOldValue = attribute.NamedArguments.FirstOrDefault(e => e.Key == "HasOldValue").Value.GetValue() is true or null;
-                        var hasNewValue = attribute.NamedArguments.FirstOrDefault(e => e.Key == "HasNewValue").Value.GetValue() is true or null;
-                        var arguments = attribute.NamedArguments.FirstOrDefault(e => e.Key == "Arguments").Value.GetValue() as object[];
+                        var hasOldValue = (attribute.NamedArguments.Any(e => e.Key == "HasOldValue")
+                                              ? attribute.NamedArguments.First(e => e.Key == "HasOldValue").Value.GetValue()
+                                              : null) is true or null;
+                        var hasNewValue = (attribute.NamedArguments.Any(e => e.Key == "HasNewValue")
+                                              ? attribute.NamedArguments.First(e => e.Key == "HasNewValue").Value.GetValue()
+                                              : null) is true or null;
+                        var arguments = (attribute.NamedArguments.Any(e => e.Key == "Arguments")
+                                            ? attribute.NamedArguments.First(e => e.Key == "Arguments").Value.GetValue()
+                                            : null) as object[];
                         guardMethods.Add((methodName, className, arguments, hasOldValue, hasNewValue));
                         break;
                     }
@@ -701,7 +723,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                 switch (attributeName)
                 {
                     case NotifyOnAttribute:
-                        if (attribute.ConstructorArguments[0].Value is string property)
+                        if (attribute.ConstructorArguments.Length > 0 && attribute.ConstructorArguments[0].Value is string property)
                             notifyOn.Add(property);
                         break;
                 }

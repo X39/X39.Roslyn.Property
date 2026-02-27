@@ -16,7 +16,7 @@ public static class GeneratorTestHelper
         string className,
         string sourceCode,
         string expectedCode,
-        string[]? acceptedErrors = null)
+        (int line, int col, string id)[]? acceptedErrors = null)
     {
         acceptedErrors ??= [];
 
@@ -64,7 +64,16 @@ public static class GeneratorTestHelper
 
         // Verify that the compilation has no errors.
         var diagnostics = newCompilation.GetDiagnostics();
-        Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error && !acceptedErrors.Contains(d.Id)));
+        Assert.Empty(
+            diagnostics.Where(d
+                => d.Severity == DiagnosticSeverity.Error
+                   && !acceptedErrors.Any(acceptedError
+                       => d.Location.GetLineSpan().StartLinePosition.Line + 1 == acceptedError.line
+                          && d.Location.GetLineSpan().StartLinePosition.Character + 1 == acceptedError.col
+                          && d.Id == acceptedError.id
+                   )
+            )
+        );
 
         // All generated files can be found in 'RunResults.GeneratedTrees'.
         var generatedFiles = runResult

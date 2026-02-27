@@ -124,7 +124,7 @@ public class SetterGetterModeTests
 
                                 """;
 
-        GeneratorTestHelper.VerifyGeneratedCode("SetterModeReadOnlySet", code, expected, ["CS0191"]);
+        GeneratorTestHelper.VerifyGeneratedCode("SetterModeReadOnlySet", code, expected, [(16, 13, "CS0191")]);
     }
 
     [Fact]
