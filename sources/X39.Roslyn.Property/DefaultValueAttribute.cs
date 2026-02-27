@@ -11,7 +11,7 @@ namespace X39.Roslyn.Property;
 /// It is used to define a default value, which can be utilized in scenarios where
 /// an assigned value is required, but the property has not been explicitly set.
 /// </remarks>
-[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
 public class DefaultValueAttribute<T> : Attribute
 {
     /// <summary>

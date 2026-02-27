@@ -23,6 +23,7 @@ internal sealed class GenInfo
     public ESetterMode SetterMode { get; set; }
     public EGetterMode GetterMode { get; set; }
     public object? DefaultValue { get; set; }
+    public bool DefaultValueIsRaw { get; set; }
     public bool DefaultValued { get; set; }
 
     public GenInfo WithDefaults(GenInfo defaultGenInfo)
@@ -60,6 +61,7 @@ internal sealed class GenInfo
             GetterMode    = GetterMode,
             SetterMode    = SetterMode,
             DefaultValue  = DefaultValued ? DefaultValue : defaultGenInfo.DefaultValue,
+            DefaultValueIsRaw = DefaultValued ? DefaultValueIsRaw : defaultGenInfo.DefaultValueIsRaw,
             DefaultValued = DefaultValued || defaultGenInfo.DefaultValued,
         };
     }

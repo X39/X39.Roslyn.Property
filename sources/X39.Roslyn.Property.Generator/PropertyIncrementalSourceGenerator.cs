@@ -23,6 +23,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
     private const string MaxLengthAttribute          = "System.ComponentModel.DataAnnotations.MaxLengthAttribute";
     private const string GeneratePropertiesAttribute = "X39.Roslyn.Property.GeneratePropertiesAttribute";
     private const string DefaultValueAttribute       = "X39.Roslyn.Property.DefaultValueAttribute<>";
+    private const string DefaultValueAsStringAttribute = "X39.Roslyn.Property.DefaultValueAsStringAttribute";
 
     private const string NotifyOnAttribute = "X39.Roslyn.Property.NotifyOnAttribute";
     private const string GetterAttribute   = "X39.Roslyn.Property.GetterAttribute";
@@ -145,6 +146,8 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                 return (classDeclarationSyntax, true);
             if (attributeName == DefaultValueAttribute)
                 return (classDeclarationSyntax, true);
+            if (attributeName == DefaultValueAsStringAttribute)
+                return (classDeclarationSyntax, true);
             if (attributeName == NoPropertyAttribute)
                 return (classDeclarationSyntax, true);
             if (attributeName == NotifyPropertyChangedAttribute)
@@ -200,6 +203,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
             string? propertyName = null;
             string? propertyEncapsulation = null;
             object? defaultValue = null;
+            bool defaultValueIsRaw = false;
             bool defaultValued = false;
             bool? virtualProperty = null;
             (string type, string from, string to)? range = null;
@@ -303,6 +307,12 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                     case DefaultValueAttribute:
                         defaultValued = true;
                         defaultValue  = attribute.ConstructorArguments[0];
+                        defaultValueIsRaw = false;
+                        break;
+                    case DefaultValueAsStringAttribute:
+                        defaultValued = true;
+                        defaultValue  = attribute.ConstructorArguments[0].Value;
+                        defaultValueIsRaw = true;
                         break;
                     case GetterAttribute:
                         getterMode = (EGetterMode) (int) (attribute.ConstructorArguments[0].Value ?? 0);
@@ -434,6 +444,7 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                 GetterMode                   = getterMode,
                 SetterMode                   = setterMode,
                 DefaultValue = defaultValue,
+                DefaultValueIsRaw = defaultValueIsRaw,
                 DefaultValued = defaultValued,
             };
         }
@@ -552,7 +563,12 @@ public class PropertyIncrementalSourceGenerator : IIncrementalGenerator
                     builder.Append(" ");
                     builder.Append(propertySymbol.GetFieldName());
                     if (currentGenInfo.DefaultValued)
-                        builder.Append($" = {currentGenInfo.DefaultValue.ToCSharp()}");
+                    {
+                        var value = currentGenInfo.DefaultValueIsRaw
+                            ? currentGenInfo.DefaultValue?.ToString() ?? "null"
+                            : currentGenInfo.DefaultValue.ToCSharp();
+                        builder.Append($" = {value}");
+                    }
                     builder.AppendLine(";");
                 }
                 builder.Append("    "); // Indentation.

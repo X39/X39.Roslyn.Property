@@ -25,6 +25,8 @@
     * [On the field (`ESetterMode.None`)](#on-the-field-esettermodenone)
   * [`DefaultValueAttribute<T>` (field | property)](#defaultvalueattributet-field--property)
     * [On the field](#on-the-field-2)
+  * [`DefaultValueAsStringAttribute` (field | property)](#defaultvalueasstringattribute-field--property)
+    * [On the field {#on-the-field-as-string}](#on-the-field-on-the-field-as-string)
   * [`NotifyOnAttribute` (property)](#notifyonattribute-property)
     * [On the property](#on-the-property-1)
   * [`DisableAttributeTakeoverAttribute` (class | field | property)](#disableattributetakeoverattribute-class--field--property)
@@ -510,7 +512,7 @@ public partial class MyClass
 
 This attribute allows to specify a default value for the field or for generated backing fields of partial properties.
 It will be used to initialize the field in the generated code.
-The value can be any valid C# expression that can be serialized to code.
+The value can be any valid C# expression that can be serialized to code (e.g., constants).
 
 ### On the field
 
@@ -519,6 +521,7 @@ The value can be any valid C# expression that can be serialized to code.
 public partial class MyClass
 {
     [DefaultValue<int>(42)]
+    [GenerateProperties]
     private int _myProperty;
 }
 
@@ -532,6 +535,39 @@ public partial class MyClass
         set
         {
             if (_myProperty == value)
+                return;
+            _myProperty = value;
+        }
+    }
+}
+```
+
+## `DefaultValueAsStringAttribute` (field | property)
+
+This attribute allows to specify a default value as a raw C# expression string.
+This is useful for values that are not compile-time constants (e.g., `new object()`).
+
+### On the field {#on-the-field-as-string}
+
+```csharp
+// User-Code
+public partial class MyClass
+{
+    [DefaultValueAsString("new object()")]
+    [GenerateProperties]
+    private object _myProperty;
+}
+
+// Generated-Code
+public partial class MyClass
+{
+    private object _myProperty = new object();
+    public object MyProperty
+    {
+        get => _myProperty;
+        set
+        {
+            if (object.Equals(_myProperty, value))
                 return;
             _myProperty = value;
         }
